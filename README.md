@@ -4,12 +4,12 @@ An interactive Python application for robot kinematics calculations featuring sy
 
 
 ## Features
-- **Two input modes:** add matrices one by one (Interactive Mode) or compute all \(T_{i-1}^{i}\) by filling a DH table (Table Mode).
+- **Two input modes:** add matrices one by one (Interactive Mode) or compute all Ti-1→i by filling a DH table (Table Mode).
 - **Editable inputs:** update or delete any matrix if you enter wrong parameters.
-- **Degree-based angles:** enter \(\alpha\) and \(\theta\) in degrees; output is shown cleanly as \( \cos(\theta), \sin(\theta) \) (no \( \pi/180 \)).
+- **Degree-based angles:** enter alpha and theta in degrees; output is shown as cos(theta), sin(theta) (no pi/180).
 - **Matrix calculator:** evaluate expressions like `T01*T12`, `(T01*T12)**-1`, and transpose operations.
-- **Forward kinematics:** compute \(T_{0N}\) by multiplying all transformation matrices.
-- **Pose extraction:** display the **placement vector** \(p\) and the **rotation matrix** \(R\).
+- **Forward kinematics:** compute T0N by multiplying all transformation matrices.
+- **Pose extraction:** display the placement vector p and the rotation matrix R.
 - **Symbolic support:** accepts symbolic variables (e.g., `theta1`, `d2`, `L1`) and simplifies results using SymPy.
 
 
