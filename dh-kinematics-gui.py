@@ -428,11 +428,11 @@ class DHCalculator(tk.Tk):
         """Process matrix expression with transpose (^T) and inverse (^-1) operators"""
         import re
         
-        # Replace ^ operators: T01^T -> transpose, T01^-1 -> inverse
-        # Handle ^T (transpose)
-        expr_proc = re.sub(r'(T\d+)\^[Tt]', r'(\1.T)', expr)
-        # Handle ^-1 (inverse)
-        expr_proc = re.sub(r'(T\d+)\^-1', r'(\1)**(-1)', expr_proc)
+        # Replace ^ operators: T01^T -> transpose, T01^-1 -> inverse, M0^T, m0^T, M0^-1, m0^-1, etc.
+        # Handle ^T (transpose) for both T/t-style (T01, t01, T12, t12) and M/m-style (M0, m0, M1, m1) matrices
+        expr_proc = re.sub(r'([TtMm]\d+)\^[Tt]', r'(\1.T)', expr)
+        # Handle ^-1 (inverse) for both T/t-style and M/m-style matrices
+        expr_proc = re.sub(r'([TtMm]\d+)\^-1', r'(\1)**(-1)', expr_proc)
         # Handle ^-1 with parentheses: (expr)^-1
         expr_proc = re.sub(r'\)(\^-1)', r')**(-1)', expr_proc)
         # Handle ^T with parentheses: (expr)^T

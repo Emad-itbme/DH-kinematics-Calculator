@@ -24,7 +24,7 @@ An interactive Python application for robot kinematics calculations featuring sy
 1. Clone or download this repository
 2. Navigate to the directory:
 ```bash
-cd "path/to/Robot/New folder"
+cd "path/to/Robot/"
 ```
 
 3. Install required dependencies:
