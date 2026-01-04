@@ -156,21 +156,21 @@ def safe_sympify(s, locals_dict=None):
 class DHCalculator(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("DH Robot Kinematics Calculator")
+        self.title("DH Robot Kinematics Calculator - Designed By Eng.Emad")
         self.geometry("1500x850")
         
         self._build_ui()
     
     def _build_ui(self):
-        """Build main notebook with three tabs"""
+        """Build main notebook with tabs"""
         # Create notebook (tabbed interface)
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
         
-        # Tab 1: Interactive Mode
+        # Tab 1: Matrix Calculator
         tab1 = ttk.Frame(self.notebook)
-        self.notebook.add(tab1, text="Interactive Mode (Add Matrices One by One)")
-        self._build_interactive_tab(tab1)
+        self.notebook.add(tab1, text="Matrix Calculator")
+        self._build_matrix_calculator_tab(tab1)
         
         # Tab 2: Table Mode
         tab2 = ttk.Frame(self.notebook)
@@ -181,11 +181,6 @@ class DHCalculator(tk.Tk):
         tab3 = ttk.Frame(self.notebook)
         self.notebook.add(tab3, text="Inverse Kinematics")
         self._build_inverse_kinematics_tab(tab3)
-        
-        # Tab 4: Matrix Calculator
-        tab4 = ttk.Frame(self.notebook)
-        self.notebook.add(tab4, text="Matrix Calculator")
-        self._build_matrix_calculator_tab(tab4)
     
     # ============== TAB 1: INTERACTIVE MODE ==============
     def _build_interactive_tab(self, parent):
@@ -478,7 +473,7 @@ class DHCalculator(tk.Tk):
         
         ttk.Button(btn_frame, text="Add Row", command=lambda: self._tbl_add_row(table_frame)).pack(side="left", padx=5)
         ttk.Button(btn_frame, text="Remove Last Row", command=self._tbl_remove_row).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Calculate All", command=self._tbl_calculate).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Calculate Forward Kinemtics", command=self._tbl_calculate).pack(side="left", padx=5)
         ttk.Button(btn_frame, text="Clear All", command=self._tbl_clear).pack(side="left", padx=5)
         
         # Output
@@ -892,6 +887,7 @@ class DHCalculator(tk.Tk):
         top = ttk.Frame(parent)
         top.pack(fill="x", padx=10, pady=10)
         ttk.Button(top, text="Add Matrix", command=self._mc_add_matrix).pack(side="left", padx=5)
+        ttk.Button(top, text="From DH Table", command=self._mc_import_from_dh).pack(side="left", padx=5)
         ttk.Button(top, text="Reset All", command=self._mc_reset_all).pack(side="left", padx=5)
         ttk.Label(top, text="").pack(side="left", fill="x", expand=True)
         
@@ -993,12 +989,12 @@ class DHCalculator(tk.Tk):
         ttk.Label(dim_frame, text="Rows:", font=("Arial", 9)).pack(side="left", padx=(0, 5))
         rows_entry = ttk.Entry(dim_frame, width=5, font=("Arial", 10))
         rows_entry.pack(side="left", padx=(0, 20))
-        rows_entry.insert(0, "2")
+        rows_entry.insert(0, "4")
         
         ttk.Label(dim_frame, text="Cols:", font=("Arial", 9)).pack(side="left", padx=(0, 5))
         cols_entry = ttk.Entry(dim_frame, width=5, font=("Arial", 10))
         cols_entry.pack(side="left")
-        cols_entry.insert(0, "2")
+        cols_entry.insert(0, "4")
         
         # Grid container frame
         grid_label = ttk.Label(dialog, text="Matrix values:", font=("Arial", 10, "bold"))
@@ -1291,6 +1287,168 @@ class DHCalculator(tk.Tk):
                 self._mc_write_output(f"{result}\n\n")
         except Exception as e:
             messagebox.showerror("Error", f"Operation error:\n{e}")
+    
+    def _mc_import_from_dh(self):
+        """Import transformation matrices from DH table in matrix calculator"""
+        # Create a dialog with DH table input
+        dialog = tk.Toplevel(self)
+        dialog.title("Import Matrices from DH Table")
+        dialog.geometry("600x600")
+        dialog.transient(self)
+        dialog.grab_set()
+        
+        # Instructions
+        ttk.Label(dialog, text="Enter DH Parameters to generate transformation matrices", 
+                  font=("Arial", 10, "bold")).pack(pady=10)
+        ttk.Label(dialog, text="Each row: α (deg), a, d, θ (deg) Write t,T,Theta,a,A,Alpha for symbols", 
+                  font=("Arial", 9), foreground="gray").pack(pady=(0, 10))
+        
+        # Table container frame (takes up middle space)
+        table_container = ttk.Frame(dialog)
+        table_container.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Scrollable frame for table
+        canvas = tk.Canvas(table_container, bg="white")
+        scrollbar = ttk.Scrollbar(table_container, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Frame for table
+        table_frame = ttk.Frame(scrollable_frame)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Headers
+        headers = ["Link", "α (Degree)", "a", "d", "θ (Degree)"]
+        for col, header in enumerate(headers):
+            ttk.Label(table_frame, text=header, font=("Arial", 10, "bold"), 
+                     relief="solid", borderwidth=1).grid(row=0, column=col, padx=5, pady=5, sticky="nsew")
+        
+        # Create entry fields (5 rows initially)
+        dh_entries = []
+        row_labels = []
+        
+        def create_rows(num_rows):
+            """Create DH parameter entry rows"""
+            for i in range(num_rows):
+                row_entries = []
+                link_label = ttk.Label(table_frame, text=str(i+1), font=("Arial", 10, "bold"))
+                link_label.grid(row=i+1, column=0, padx=5, pady=5, sticky="nsew")
+                row_labels.append(link_label)
+                
+                for col in range(4):
+                    entry = ttk.Entry(table_frame, width=12, font=("Arial", 10))
+                    entry.grid(row=i+1, column=col+1, padx=5, pady=5, sticky="nsew")
+                    entry.insert(0, "0")
+                    row_entries.append(entry)
+                dh_entries.append(row_entries)
+        
+        create_rows(3)
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Button frame at bottom of dialog
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill="x", padx=10, pady=10)
+        
+        def add_row():
+            """Add a new row to the DH table"""
+            i = len(dh_entries)
+            row_entries = []
+            link_label = ttk.Label(table_frame, text=str(i+1), font=("Arial", 10, "bold"))
+            link_label.grid(row=i+1, column=0, padx=5, pady=5, sticky="nsew")
+            row_labels.append(link_label)
+            
+            for col in range(4):
+                entry = ttk.Entry(table_frame, width=12, font=("Arial", 10))
+                entry.grid(row=i+1, column=col+1, padx=5, pady=5, sticky="nsew")
+                entry.insert(0, "0")
+                row_entries.append(entry)
+            dh_entries.append(row_entries)
+        
+        def remove_row():
+            """Remove the last row from the DH table"""
+            if len(dh_entries) > 1:
+                # Remove last row entries
+                for entry in dh_entries[-1]:
+                    entry.grid_forget()
+                dh_entries.pop()
+                
+                # Remove last row label
+                row_labels[-1].grid_forget()
+                row_labels.pop()
+        
+        def extract_and_import():
+            """Extract matrices from DH table and add to matrix calculator"""
+            try:
+                # Read DH parameters from entries
+                dh_params = []
+                for row_entries in dh_entries:
+                    # Check if row is empty
+                    if all(e.get().strip() == "" for e in row_entries):
+                        continue
+                    
+                    alpha = safe_sympify(row_entries[0].get().strip())
+                    a = safe_sympify(row_entries[1].get().strip())
+                    d = safe_sympify(row_entries[2].get().strip())
+                    theta = safe_sympify(row_entries[3].get().strip())
+                    
+                    dh_params.append([alpha, a, d, theta])
+                
+                if not dh_params:
+                    messagebox.showwarning("Empty", "Enter at least one row of DH parameters")
+                    return
+                
+                # Generate transformation matrices
+                matrices = []
+                for i, (alpha, a, d, theta) in enumerate(dh_params):
+                    Ti = mDH_deg(alpha, a, d, theta)
+                    Ti = sp.simplify(Ti)
+                    matrices.append(Ti)
+                
+                # Add matrices to matrix calculator
+                start_idx = len(self.mc_matrices)
+                for i, M in enumerate(matrices):
+                    self.mc_matrices.append(M)
+                    name = f"T{start_idx + i}{start_idx + i + 1}"
+                    self.mc_names[name] = M
+                    self.mc_listbox.insert("end", name)
+                
+                # Update output
+                self._mc_write_output("\n" + "=" * 80 + "\n")
+                self._mc_write_output("IMPORTED TRANSFORMATION MATRICES FROM DH TABLE\n")
+                self._mc_write_output("=" * 80 + "\n\n")
+                
+                for i, M in enumerate(matrices):
+                    name = f"T{start_idx + i}{start_idx + i + 1}"
+                    self._mc_write_output(f"{name} =\n{pretty_matrix(M)}\n\n")
+                
+                self._mc_write_output("=" * 80 + "\n")
+                self._mc_write_output(f"✓ Added {len(matrices)} matrices to calculator\n\n")
+                
+                dialog.destroy()
+                
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to extract matrices:\n{e}")
+        
+        # Row buttons at bottom (left side)
+        row_btn_frame = ttk.Frame(btn_frame)
+        row_btn_frame.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        ttk.Button(row_btn_frame, text="Add Row", command=add_row).pack(side="left", padx=2, fill="x", expand=True)
+        ttk.Button(row_btn_frame, text="Remove Last Row", command=remove_row).pack(side="left", padx=2, fill="x", expand=True)
+        
+        # Main action buttons (right side)
+        ttk.Button(btn_frame, text="Extract Matrices", command=extract_and_import, width=20).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy, width=20).pack(side="left", padx=5)
+        
+        dialog.focus()
     
     def _mc_write_output(self, text, tag=""):
         """Write to matrix calculator output"""
